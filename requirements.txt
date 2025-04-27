@@ -1,0 +1,12 @@
+streamlit
+openai-whisper
+pytubefix
+numpy
+pandas
+torch
+torchvision
+torchaudio
+pytest
+python-dotenv
+requests
+huggingface_hub

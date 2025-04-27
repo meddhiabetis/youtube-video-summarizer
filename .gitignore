@@ -1,0 +1,23 @@
+# Ignore virtual environment
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore data files
+*.mp4
+*.wav
+
+# Ignore system files
+.DS_Store
+*.log
+
+# Ignore downloads
+downloads/
+
+# Ignore environment files
+.env
+.venv
+
+# Ignore Visual Studio Code files
+.vscode/
