@@ -2,6 +2,7 @@ import whisper
 import os
 from typing import List, Dict, Optional
 import json
+import torch
 
 def transcribe_audio(
     audio_path: str,
@@ -39,8 +40,12 @@ def transcribe_audio(
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
-        print(f"Loading Whisper {model_size} model...")
-        model = whisper.load_model(model_size)
+        print(f"Checking CUDA availability...")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"Using device: {device}")
+
+        print(f"Loading Whisper {model_size} model on {device}...")
+        model = whisper.load_model(model_size, device=device)
 
         # Configure transcription options
         transcribe_args = {

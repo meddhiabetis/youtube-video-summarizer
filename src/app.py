@@ -1,14 +1,15 @@
 import os
 import json
 import streamlit as st
+from datetime import timedelta
 from youtube_fetcher import download_video_audio, get_video_metadata
 from transcription import transcribe_audio
 from summarization import YouTubeSummarizer
-from datetime import timedelta
+from assistant import VideoAssistant
 
 # Configure page
 st.set_page_config(
-    page_title="YouTube Summarizer",
+    page_title="YouTube AI Assistant",
     page_icon="🎥",
     layout="wide"
 )
@@ -22,18 +23,25 @@ st.markdown("""
         padding: 20px;
         margin-bottom: 20px;
     }
-    .highlight {
-        background-color: #fffacd;
-        padding: 2px 5px;
-        border-radius: 3px;
+    .chat-message-user {
+        background-color: #e3f2fd;
+        border-radius: 10px;
+        padding: 10px;
+        margin: 5px 0;
+    }
+    .chat-message-assistant {
+        background-color: #f5f5f5;
+        border-radius: 10px;
+        padding: 10px;
+        margin: 5px 0;
     }
     .timestamp-link {
         color: #1e88e5;
         font-weight: bold;
         text-decoration: none;
     }
-    .timestamp-link:hover {
-        text-decoration: underline;
+    .stProgress > div > div > div > div {
+        background-color: #1e88e5;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -50,7 +58,7 @@ def display_summary(summary: dict, video_id: str):
     """Render summary in Streamlit with formatted sections"""
     st.subheader("📝 Video Summary")
     st.caption(f"Duration: {format_timestamp(summary['metadata']['duration'])} | "
-               f"Sections: {summary['metadata']['total_sections']}")
+               f"Sections: {len(summary['sections'])}")
     
     for section in summary['sections']:
         with st.container():
@@ -71,7 +79,6 @@ def display_summary(summary: dict, video_id: str):
                 st.metric("Duration", format_timestamp(section['end'] - section['start']))
             
             with col2:
-                # Remove any "Here is the summary" lines
                 clean_summary = "\n".join(
                     line for line in section['summary'].split('\n')
                     if not line.lower().startswith("here is the summary")
@@ -79,6 +86,39 @@ def display_summary(summary: dict, video_id: str):
                 st.markdown(clean_summary)
         
         st.divider()
+
+def chat_interface(assistant: VideoAssistant):
+    """Display chat interface"""
+    st.subheader("💬 Video Assistant")
+    
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Chat input
+    if prompt := st.chat_input("Ask anything about the video..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Get assistant response
+        with st.spinner("Thinking..."):
+            response = assistant.generate_response(prompt)
+        
+        # Display assistant response
+        with st.chat_message("assistant"):
+            st.markdown(response)
+        
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
 def extract_video_id(url: str) -> str:
     """Extract video ID from URL"""
@@ -89,33 +129,43 @@ def extract_video_id(url: str) -> str:
     return url
 
 def main():
-    st.title("🎥 YouTube Video Summarizer")
+    st.title("🎥 YouTube AI Assistant")
     st.markdown("""
-    Paste a YouTube URL below to get:
-    - Full transcript with timestamps
-    - AI-generated summary
-    - Key technical concepts
+    Complete YouTube video processing pipeline:
+    1. Download video audio
+    2. Generate transcript with timestamps
+    3. Create AI-powered summary
+    4. Interactive Q&A about the video
     """)
+    
+    # Initialize session state
+    if "processing_stage" not in st.session_state:
+        st.session_state.processing_stage = None
+    if "summary" not in st.session_state:
+        st.session_state.summary = None
+    if "assistant" not in st.session_state:
+        st.session_state.assistant = VideoAssistant()
     
     # Input section
     with st.form("youtube_form"):
         youtube_url = st.text_input("YouTube URL:", placeholder="https://www.youtube.com/watch?v=...")
         use_groq = st.checkbox("Use enhanced AI summaries (requires Groq API key)", 
                              value=True,
-                             help="Uses Groq's AI for higher quality summaries if API key is available")
-        submitted = st.form_submit_button("Summarize Video")
+                             help="Uses Groq's AI for higher quality summaries if available")
+        submitted = st.form_submit_button("Process Video")
     
     if submitted and youtube_url:
-        with st.spinner("Processing video..."):
-            try:
-                video_id = extract_video_id(youtube_url)
-                
-                # Step 1: Fetch video metadata
-                st.info("🔍 Fetching video metadata...")
+        try:
+            video_id = extract_video_id(youtube_url)
+            
+            # Processing pipeline
+            with st.status("Processing video...", expanded=True) as status:
+                # Step 1: Fetch metadata
+                st.write("🔍 Fetching video metadata...")
                 metadata = get_video_metadata(youtube_url)
                 
                 if not metadata:
-                    st.error("Couldn't fetch video metadata. Please check the URL.")
+                    st.error("Couldn't fetch video metadata")
                     return
                 
                 # Display video info
@@ -129,17 +179,17 @@ def main():
                               f"👀 {metadata['views']:,} views")
                 
                 # Step 2: Download audio
-                st.info("⬇️ Downloading audio...")
+                st.write("⬇️ Downloading audio...")
                 audio_path = download_video_audio(youtube_url)
                 if not audio_path:
-                    st.error("Failed to download audio. Please try another video.")
+                    st.error("Failed to download audio")
                     return
                 
                 # Step 3: Transcribe
-                st.info("🎤 Transcribing audio...")
+                st.write("🎤 Transcribing audio...")
                 transcription = transcribe_audio(
                     audio_path,
-                    model_size="small",  # Balanced speed/accuracy
+                    model_size="small",
                     timestamp_resolution="word"
                 )
                 
@@ -148,25 +198,36 @@ def main():
                     return
                 
                 # Step 4: Summarize
-                st.info("🧠 Generating summary...")
+                st.write("🧠 Generating summary...")
                 summarizer = YouTubeSummarizer()
-                summary = summarizer.generate_full_summary(transcription, use_groq=use_groq)
+                summary = summarizer.generate_summary(transcription)
+                summary['metadata']['video_id'] = video_id
                 
-                # Display results
-                st.success("✅ Processing complete!")
-                display_summary(summary, video_id)
+                # Save summary
+                os.makedirs("downloads", exist_ok=True)
+                with open("downloads/latest_summary.json", "w") as f:
+                    json.dump(summary, f)
                 
-                # Download buttons
-                st.download_button(
-                    label="Download Full Transcript (JSON)",
-                    data=json.dumps(transcription, indent=2),
-                    file_name="transcription.json",
-                    mime="application/json"
-                )
+                # Update session state
+                st.session_state.summary = summary
+                st.session_state.assistant.load_summary()
                 
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
-                st.stop()
+                status.update(label="Processing complete!", state="complete", expanded=False)
+            
+            # Display results
+            st.success("✅ Video processed successfully!")
+            
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            st.stop()
+    
+    # Display summary if available
+    if st.session_state.summary:
+        display_summary(
+            st.session_state.summary,
+            st.session_state.summary['metadata']['video_id']
+        )
+        chat_interface(st.session_state.assistant)
 
 if __name__ == "__main__":
     main()

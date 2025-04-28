@@ -1,58 +1,91 @@
-# YouTube Video Summarizer
+# 🎥 YouTube Video Summarizer
+
+[![Repo Link](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/meddhiabetis/youtube-video-summarizer)
 
 ## Overview
-This project summarizes educational YouTube videos to provide concise, accessible information for students. It transcribes video audio using Whisper and generates summaries using advanced language models.
+**YouTube Video Summarizer** is an intelligent tool designed to automatically transcribe, summarize, and assist with educational YouTube video content, making complex information more accessible for students and lifelong learners.
 
-## Features
-- Fetch YouTube videos and transcribe audio.
-- Generate text-based summaries tailored for educational content.
-- Streamlit-based web interface for ease of use.
+It leverages **OpenAI Whisper** for accurate transcription, integrates advanced **Language Models** for generating clear and concise summaries, and features an interactive **Assistant** to help users engage more deeply with the content — all accessible through a simple, intuitive **Streamlit** web interface.
 
-## Tech Stack
-- **Python**: Core programming language.
-- **Streamlit**: For the web interface.
-- **Whisper**: For transcription.
-- **LLMs**: To generate summaries.
+---
 
-## Setup Instructions
-1. Clone the repository:
-   ```bash
-   git clone <your-repo-url>
-   cd youtube-summarizer
-   ```
-2. Run the setup script:
-   ```bash
-   ./setup.sh
-   ```
-3. Start the app:
-   ```bash
-   streamlit run src/app.py
-   ```
+## ✨ Features
+- 📥 Fetch YouTube videos and extract audio.
+- 📝 Transcribe audio using state-of-the-art Whisper models.
+- ✂️ Generate smart, educational summaries.
+- 🌐 Easy-to-use web interface powered by Streamlit.
+- 🔒 Environment variable support for API keys.
 
-## Project Structure
+---
+
+## 🚀 Setup Instructions
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/meddhiabetis/youtube-video-summarizer.git
+cd youtube-video-summarizer
 ```
-youtube-summarizer/
+
+### 2. Install Python Dependencies
+It’s recommended to use a virtual environment (.venv):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Install FFmpeg
+Whisper requires FFmpeg. Install it via:
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+On macOS (with Homebrew):
+
+```bash
+brew install ffmpeg
+```
+
+On Windows:
+
+Download from FFmpeg.org and add it to your PATH.
+
+Note: Verify installation by running `ffmpeg -version`.
+
+### 4. Create a .env file
+Inside the project root, create a .env file and add your API key:
+
+```
+GROQ_API_KEY=your_key_here
+```
+
+### 5. Run the App
+```bash
+streamlit run src/app.py
+```
+
+📂 Project Structure
+```
+youtube-video-summarizer/
 ├── src/
 │   ├── app.py                # Main Streamlit app
-│   ├── transcription.py      # Handles transcription using Whisper
-│   ├── summarization.py      # Summarization logic (LLM integration)
-│   ├── youtube_fetcher.py    # Fetch YouTube video/audio
-│   └── utils.py              # Helper functions
+│   ├── assistant.py           # Video assistant and LLM interface
+│   ├── transcription.py       # Handles transcription using Whisper
+│   ├── summarization.py       # Summarization logic (LLM integration)
+│   └── youtube_fetcher.py     # Fetch YouTube video/audio
 ├── tests/
-│   ├── test_transcription.py # Unit tests for transcription
-│   ├── test_summarization.py # Unit tests for summarization
-│   └── test_youtube_fetcher.py # Unit tests for YouTube fetcher
-├── requirements.txt          # Python dependencies
-├── .gitignore                # Git ignore file
-├── README.md                 # Project documentation
-└── setup.sh                  # Script to set up the environment
+│   ├── test_transcription.py  # Unit tests for transcription
+│   ├── test_summarization.py  # Unit tests for summarization
+│   └── test_youtube_fetcher.py# Unit tests for YouTube fetcher
+├── requirements.txt           # Python dependencies
+├── .gitignore                 # Git ignore file
+├── README.md                  # Project documentation
+└── .env                       # API keys and environment variables
 ```
 
-## Roadmap
-- [x] Set up project structure and environment.
-- [ ] Implement transcription with Whisper.
-- [ ] Integrate summarization using LLMs.
-- [ ] Build and deploy the Streamlit app.
 
-## Contributing
-Feel free to open issues or submit pull requests for improvements!
