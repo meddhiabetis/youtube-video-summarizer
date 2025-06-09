@@ -4,5 +4,5 @@ python-dotenv
 numpy
 sentence-transformers
 openai-whisper
-torch=
-pytubefix=
+torch
+pytubefix
