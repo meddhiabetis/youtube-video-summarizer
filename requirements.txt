@@ -1,8 +1,8 @@
-streamlit==1.44.1
-openai==1.76.0
-python-dotenv==1.1.0
-numpy==2.2.4
-sentence-transformers==4.1.0
-openai-whisper==20240930
-torch==2.6.0
-pytubefix==8.12.3
+streamlit
+openai
+python-dotenv
+numpy
+sentence-transformers
+openai-whisper
+torch=
+pytubefix=
